@@ -4,6 +4,8 @@ use Protocol::ACME;
 use Protocol::ACME::Challenge::Manual;
 use Protocol::ACME::Challenge::SimpleSSH;
 use Protocol::ACME::Challenge::LocalFile;
+
+use HTTP::Tiny;
 use IO::File;
 
 use Convert::X509;
@@ -27,9 +29,10 @@ eval
 {
   # Creating a LWP::USerAgent is not strictly necessary but
   # this provides some flexbilty and test coverage
-  my $ua = LWP::UserAgent->new();
-  $ua->default_header( "Host" => "acme-staging.api.letsencrypt.org" );
-  $ua->ssl_opts( verify_hostname => 0 );
+  my $ua = HTTP::Tiny->new(
+    verify_SSL => 0,
+    default_headers => { Host => 'acme-staging.api.letsencrypt.org' },
+  );
 
   my $acme = Protocol::ACME->new( host               => $host,
                                   account_key        => $account_key_file,

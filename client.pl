@@ -8,7 +8,7 @@ use IO::File;
 
 use Convert::X509;
 
-use LWP::UserAgent;
+use HTTP::Tiny;
 
 use Data::Dumper;
 
@@ -75,9 +75,10 @@ my $challenges = {
 
 eval
 {
-  my $ua = LWP::UserAgent->new();
-  $ua->default_header( "Host" => "acme-staging.api.letsencrypt.org" );
-  $ua->ssl_opts( verify_hostname => 0 );
+  my $ua = HTTP::Tiny->new(
+    verify_SSL => 0,
+    default_headers => { Host => 'acme-staging.api.letsencrypt.org' },
+  );
 
   my $acme = Protocol::ACME->new( host               => $host,
                                   account_key_path   => $account_key_file,

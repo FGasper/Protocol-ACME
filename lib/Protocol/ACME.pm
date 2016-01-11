@@ -294,7 +294,7 @@ use Crypt::RSA::Parse ();
 
 use MIME::Base64 qw( encode_base64url decode_base64url decode_base64 encode_base64 );
 
-use LWP::UserAgent;
+use HTTP::Tiny;
 use JSON;
 # use Crypt::OpenSSL::EC; For key recovery when the API supports it
 # use Crypt::PK::ECC;
@@ -338,7 +338,7 @@ sub _init
 
   if ( ! exists $self->{ua} )
   {
-    $self->{ua} = LWP::UserAgent->new();
+    $self->{ua} = HTTP::Tiny->new();
   }
 
   if ( ! exists $self->{host} )
@@ -795,7 +795,20 @@ sub _request_post
   my $url     = shift;
   my $content = shift;
 
-  my $resp = $self->{ua}->post( $url, Content => $content );
+  my $ua = $self->{ua};
+  my $resp;
+  if ( UNIVERSAL::isa( $ua, 'HTTP::Tiny' ) )
+  {
+    $resp = $ua->post( $url, { content => $content } );
+  }
+  elsif ( UNIVERSAL::isa( $ua, 'HTTP::Tiny' ) )
+  {
+    $resp = $ua->post( $url, Content => $content );
+  }
+  else
+  {
+    die "Unknown “ua” object: $ua";
+  }
 
   $self->{nonce} = $resp->header( $NONCE_HEADER );
   $self->{json} = $resp->content();
