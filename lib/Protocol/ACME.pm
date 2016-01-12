@@ -294,7 +294,8 @@ use Crypt::RSA::Parse ();
 
 use MIME::Base64 qw( encode_base64url decode_base64url decode_base64 encode_base64 );
 
-use HTTP::Tiny;
+use HTTP::Tiny;     #Prefer to HTTP::Tiny::UA for lightness
+
 use JSON;
 # use Crypt::OpenSSL::EC; For key recovery when the API supports it
 # use Crypt::PK::ECC;
@@ -797,25 +798,45 @@ sub _request_post
 
   my $ua = $self->{ua};
   my $resp;
-  if ( UNIVERSAL::isa( $ua, 'HTTP::Tiny' ) )
+
+  if ( UNIVERSAL::isa($ua,'HTTP::Tiny') )
   {
     $resp = $ua->post( $url, { content => $content } );
+
+    #This is what HTTP::Tiny gives back: a plain hashref
+    if ('HASH' eq ref $resp)
+    {
+      $self->{nonce} = $resp->{'headers'}{$NONCE_HEADER};
+      $self->{json} = $resp->{'content'};
+    }
+
+    #HTTP::Tiny::UA gives back one of these objects.
+    elsif ( UNVERSAL::isa($resp, 'HTTP::Tiny::UA::Response') )
+    {
+      $self->{nonce} = $resp->header( $NONCE_HEADER );
+      $self->{json} = $resp->content();
+    }
+
+    else {
+      die "Unrecognized return class from UA $ua: $resp";
+    }
   }
-  elsif ( UNIVERSAL::isa( $ua, 'HTTP::Tiny' ) )
+  elsif ( UNIVERSAL::isa( $ua, 'LWP::UserAgent' ) )
   {
     $resp = $ua->post( $url, Content => $content );
+    $self->{nonce} = $resp->header( $NONCE_HEADER );
+    $self->{json} = $resp->content();
   }
   else
   {
-    die "Unknown “ua” object: $ua";
+    die "Unknown “ua” object type: $ua";
   }
 
-  $self->{nonce} = $resp->header( $NONCE_HEADER );
-  $self->{json} = $resp->content();
-
   eval {
-    $self->{content} = decode_json( $resp->content() );
+    $self->{content} = decode_json( $self->{json} );
   };
+
+  #XXX: Should this warn() if the JSON parse fails??
 
   return $resp;
 }

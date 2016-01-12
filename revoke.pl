@@ -27,8 +27,8 @@ if ( ! $account_key_file or ! $cert_file )
 
 eval
 {
-  # Creating a LWP::USerAgent is not strictly necessary but
-  # this provides some flexbilty and test coverage
+  # Creating an HTTP::Tiny is not strictly necessary but
+  # this provides some flexibility and test coverage
   my $ua = HTTP::Tiny->new(
     verify_SSL => 0,
     default_headers => { Host => 'acme-staging.api.letsencrypt.org' },
