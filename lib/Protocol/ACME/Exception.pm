@@ -3,14 +3,14 @@ package Protocol::ACME::Exception;
 use strict;
 use warnings;
 
-use Data::Dumper;
-
 # very simple stringification ... make this
 # more elaborate according to taste
 use overload ('""' => \&stringify);
 sub stringify
 {
     my $self = shift;
+
+    require Data::Dumper;
     return ref($self).' error: '.Dumper $self;
 }
 
